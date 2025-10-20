@@ -1,136 +1,133 @@
 library(shiny)
-library(gridExtra)
 
 # this looks weird but uploaded_csv needed to be instatiated globally
 # or else it had a frame issue
 uploaded_csv = data.frame()
 
-if(interactive()) {
-  ui = fluidPage(
-    # title elements
-    titlePanel("Improved Interactive Hypothesis Testing App"),
-    titlePanel(h4("Created by Kevin Cha, Qixiang Gao, Prabhnoor Kaur")),
-    sidebarLayout(
-      # left side selector elements
-      sidebarPanel(
-        # hypothesis input
-        selectInput(
-          "hypothesis", "Choose Hypothesis Test:",
-          c("One-Sample t-Test", "Two-Sample t-Test", "Proportion Test")
-        ),
-        # hypothesis conditional for single sample
-        conditionalPanel(
-          condition = "input.hypothesis == 'One-Sample t-Test'",
-          radioButtons(
-            "inputFiles", "Select data input option:",
-            c("Manual Input", "Sample Data", "CSV Upload (needs headers)")
-          ),
-          # conditionals based on data input selection
-          conditionalPanel(
-            condition = "input.inputFiles == 'Manual Input'",
-            textInput(
-              "singleSampleData", "Enter Sample Data (comma-separated):", "1, 2, 4, 8, 9"
-            )
-          ),
-          conditionalPanel(
-            condition = "input.inputFiles == 'Sample Data'",
-            selectInput(
-              "singleSampleColumn", "Choose column:",
-              colnames(mtcars)
-            )
-          ),
-          conditionalPanel(
-            condition = "input.inputFiles == 'CSV Upload (needs headers)'",
-            fileInput(
-              "singleSampleFile", "Upload File (csv)", accept=".csv", placeholder="Currently using sample..."
-            ),
-            uiOutput("singlePlaceholder")
-          ),
-          # single samp params
-          textInput(
-            "mu", "Population Mean (H0):", 20
-          ),
-          textInput(
-            "alphaOneSample", "Significance Level (α):", 0.05
-          ),
-          selectInput(
-            "graphSelOneSamp", "Graph Selection:",
-            c("Histogram", "Boxplot")
-          )
-        ),
-        # hypothesis conditional for two sample
-        conditionalPanel(
-          condition = "input.hypothesis == 'Two-Sample t-Test'",
-          radioButtons(
-            "inputFiles", "Select data input option:",
-            c("Manual Input", "Sample Data", "CSV Upload (needs headers)")
-          ),
-          # conditionals based on data input selection, for two samp
-          conditionalPanel(
-            condition = "input.inputFiles == 'Manual Input'",
-            textInput(
-              "sampleData1", "Enter Sample 1 Data (comma-separated):", "1, 2, 4, 8, 9"
-            ),
-            textInput(
-              "sampleData2", "Enter Sample 2 Data (comma-separated):", "5, 8, 15, 19, 23"
-            )
-          ),
-          conditionalPanel(
-            condition = "input.inputFiles == 'Sample Data'",
-            selectInput(
-              "twoSampleColumnOne", "Choose column:",
-              colnames(mtcars)
-            ),
-            selectInput(
-              "twoSampleColumnTwo", "Choose column:",
-              colnames(mtcars)
-            )
-          ),
-          conditionalPanel(
-            condition = "input.inputFiles == 'CSV Upload (needs headers)'",
-            fileInput(
-              "twoSampleFile", "Upload File (csv)", accept=".csv", placeholder="Currently using sample..."
-            ),
-            uiOutput("multiPlaceholderOne"),
-            uiOutput("multiPlaceholderTwo")
-          ),
-          # two samp params
-          textInput(
-            "alphaTwoSample", "Significance Level (α):", 0.05
-          ),
-          selectInput(
-            "graphSelTwoSamp", "Graph Selection:",
-            c("Histogram", "Boxplot")
-          )
-        ),
-        # prop test conditional
-        conditionalPanel(
-          condition = "input.hypothesis == 'Proportion Test'",
-          # nothing special for prop tests
-          textInput(
-            "numSuccesses", "Number of Successes", 8
-          ),
-          textInput(
-            "numTrials", "Number of Trials", 14
-          ),
-          textInput(
-            "propHypo", "Null Proportion (H0):", 0.5
-          ),
-          textInput(
-            "alphaProp", "Significance Level (α):", 0.05
-          )
-        ),
-        # run button
-        actionButton("runButton", "Run Test", class = "btn-primary")
+ui = fluidPage(
+  # title elements
+  titlePanel("Improved Interactive Hypothesis Testing App"),
+  titlePanel(h4("Created by Kevin Cha, Qixiang Gao, Prabhnoor Kaur")),
+  sidebarLayout(
+    # left side selector elements
+    sidebarPanel(
+      # hypothesis input
+      selectInput(
+        "hypothesis", "Choose Hypothesis Test:",
+        c("One-Sample t-Test", "Two-Sample t-Test", "Proportion Test")
       ),
-      # right side, hypo test + graph results
-      mainPanel(
-        verbatimTextOutput("results"),
-        plotOutput("plot")
-      )
+      # hypothesis conditional for single sample
+      conditionalPanel(
+        condition = "input.hypothesis == 'One-Sample t-Test'",
+        radioButtons(
+          "inputFiles", "Select data input option:",
+          c("Manual Input", "Sample Data", "CSV Upload (needs headers)")
+        ),
+        # conditionals based on data input selection
+        conditionalPanel(
+          condition = "input.inputFiles == 'Manual Input'",
+          textInput(
+            "singleSampleData", "Enter Sample Data (comma-separated):", "1, 2, 4, 8, 9"
+          )
+        ),
+        conditionalPanel(
+          condition = "input.inputFiles == 'Sample Data'",
+          selectInput(
+            "singleSampleColumn", "Choose column:",
+            colnames(mtcars)
+          )
+        ),
+        conditionalPanel(
+          condition = "input.inputFiles == 'CSV Upload (needs headers)'",
+          fileInput(
+            "singleSampleFile", "Upload File (csv)", accept=".csv", placeholder="Currently using sample..."
+          ),
+          uiOutput("singlePlaceholder")
+        ),
+        # single samp params
+        textInput(
+          "mu", "Population Mean (H0):", 20
+        ),
+        textInput(
+          "alphaOneSample", "Significance Level (α):", 0.05
+        ),
+        selectInput(
+          "graphSelOneSamp", "Graph Selection:",
+          c("Histogram", "Boxplot")
+        )
+      ),
+      # hypothesis conditional for two sample
+      conditionalPanel(
+        condition = "input.hypothesis == 'Two-Sample t-Test'",
+        radioButtons(
+          "inputFiles", "Select data input option:",
+          c("Manual Input", "Sample Data", "CSV Upload (needs headers)")
+        ),
+        # conditionals based on data input selection, for two samp
+        conditionalPanel(
+          condition = "input.inputFiles == 'Manual Input'",
+          textInput(
+            "sampleData1", "Enter Sample 1 Data (comma-separated):", "1, 2, 4, 8, 9"
+          ),
+          textInput(
+            "sampleData2", "Enter Sample 2 Data (comma-separated):", "5, 8, 15, 19, 23"
+          )
+        ),
+        conditionalPanel(
+          condition = "input.inputFiles == 'Sample Data'",
+          selectInput(
+            "twoSampleColumnOne", "Choose column:",
+            colnames(mtcars)
+          ),
+          selectInput(
+            "twoSampleColumnTwo", "Choose column:",
+            colnames(mtcars)
+          )
+        ),
+        conditionalPanel(
+          condition = "input.inputFiles == 'CSV Upload (needs headers)'",
+          fileInput(
+            "twoSampleFile", "Upload File (csv)", accept=".csv", placeholder="Currently using sample..."
+          ),
+          uiOutput("multiPlaceholderOne"),
+          uiOutput("multiPlaceholderTwo")
+        ),
+        # two samp params
+        textInput(
+          "alphaTwoSample", "Significance Level (α):", 0.05
+        ),
+        selectInput(
+          "graphSelTwoSamp", "Graph Selection:",
+          c("Histogram", "Boxplot")
+        )
+      ),
+      # prop test conditional
+      conditionalPanel(
+        condition = "input.hypothesis == 'Proportion Test'",
+        # nothing special for prop tests
+        textInput(
+          "numSuccesses", "Number of Successes", 8
+        ),
+        textInput(
+          "numTrials", "Number of Trials", 14
+        ),
+        textInput(
+          "propHypo", "Null Proportion (H0):", 0.5
+        ),
+        textInput(
+          "alphaProp", "Significance Level (α):", 0.05
+        )
+      ),
+      # run button
+      actionButton("runButton", "Run Test", class = "btn-primary")
+    ),
+    # right side, hypo test + graph results
+    mainPanel(
+      verbatimTextOutput("results"),
+      plotOutput("plot")
     )
   )
-}
+)
 
 server = function(input, output) {
   # on single samp file upload, parse the file + update column selection
