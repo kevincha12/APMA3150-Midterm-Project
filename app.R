@@ -1,24 +1,31 @@
 library(shiny)
 library(gridExtra)
 
+# this looks weird but uploaded_csv needed to be instatiated globally
+# or else it had a frame issue
 uploaded_csv = data.frame()
 
 if(interactive()) {
   ui = fluidPage(
+    # title elements
     titlePanel("Improved Interactive Hypothesis Testing App"),
     titlePanel(h4("Created by Kevin Cha, Qixiang Gao, Prabhnoor Kaur")),
     sidebarLayout(
+      # left side selector elements
       sidebarPanel(
+        # hypothesis input
         selectInput(
           "hypothesis", "Choose Hypothesis Test:",
           c("One-Sample t-Test", "Two-Sample t-Test", "Proportion Test")
         ),
+        # hypothesis conditional for single sample
         conditionalPanel(
           condition = "input.hypothesis == 'One-Sample t-Test'",
           radioButtons(
             "inputFiles", "Select data input option:",
             c("Manual Input", "Sample Data", "CSV Upload (needs headers)")
           ),
+          # conditionals based on data input selection
           conditionalPanel(
             condition = "input.inputFiles == 'Manual Input'",
             textInput(
@@ -39,6 +46,7 @@ if(interactive()) {
             ),
             uiOutput("singlePlaceholder")
           ),
+          # single samp params
           textInput(
             "mu", "Population Mean (H0):", 20
           ),
@@ -50,12 +58,14 @@ if(interactive()) {
             c("Histogram", "Boxplot")
           )
         ),
+        # hypothesis conditional for two sample
         conditionalPanel(
           condition = "input.hypothesis == 'Two-Sample t-Test'",
           radioButtons(
             "inputFiles", "Select data input option:",
             c("Manual Input", "Sample Data", "CSV Upload (needs headers)")
           ),
+          # conditionals based on data input selection, for two samp
           conditionalPanel(
             condition = "input.inputFiles == 'Manual Input'",
             textInput(
@@ -84,6 +94,7 @@ if(interactive()) {
             uiOutput("multiPlaceholderOne"),
             uiOutput("multiPlaceholderTwo")
           ),
+          # two samp params
           textInput(
             "alphaTwoSample", "Significance Level (α):", 0.05
           ),
@@ -92,8 +103,10 @@ if(interactive()) {
             c("Histogram", "Boxplot")
           )
         ),
+        # prop test conditional
         conditionalPanel(
           condition = "input.hypothesis == 'Proportion Test'",
+          # nothing special for prop tests
           textInput(
             "numSuccesses", "Number of Successes", 8
           ),
@@ -107,8 +120,10 @@ if(interactive()) {
             "alphaProp", "Significance Level (α):", 0.05
           )
         ),
+        # run button
         actionButton("runButton", "Run Test", class = "btn-primary")
       ),
+      # right side, hypo test + graph results
       mainPanel(
         verbatimTextOutput("results"),
         plotOutput("plot")
@@ -118,6 +133,7 @@ if(interactive()) {
 }
 
 server = function(input, output) {
+  # on single samp file upload, parse the file + update column selection
   observeEvent(input$singleSampleFile, {
   output$singlePlaceholder = renderUI({
       file = input$singleSampleFile
@@ -125,6 +141,7 @@ server = function(input, output) {
       choices=colnames(uploaded_csv[unlist(lapply(uploaded_csv, is.numeric))])
       selectInput("singleUploadedColumn", "Select Column:", choices=choices)
   })})
+  # on two samp file upload, parse the file + update column selection
   observeEvent(input$twoSampleFile, {
     file = input$twoSampleFile
     uploaded_csv = read.csv(file$datapath, header=TRUE)
@@ -135,11 +152,16 @@ server = function(input, output) {
     output$multiPlaceholderTwo = renderUI({
       selectInput("multiUploadedColumnTwo", "Select Second Column:", choices=choices)
     })})
+  # hypothesis test result renderer
   output$results = renderPrint({
+    # conditionals based on type of hypothesis test
     if(input$hypothesis == "One-Sample t-Test") {
+      # base case - if user selected CSV + there's no file input yet display message
       if(input$inputFiles == "CSV Upload (needs headers)" & is.null(input$singleSampleFile)){
         return("Please upload a CSV to continue!")
       } else if(input$inputFiles == "Manual Input") {
+        # looks weird but string splitting commas with surrounding whitespace via regex parsing
+        # to read in user input comma separated lists
         sample = unlist(strsplit(input$singleSampleData, '\\s*,\\s*'))
         sample = as.numeric(sample)
       } else if(input$inputFiles == "Sample Data") {
@@ -149,11 +171,13 @@ server = function(input, output) {
         uploaded_csv = read.csv(file$datapath, header=TRUE)
         sample = uploaded_csv[input$singleUploadedColumn]
       }
+      # other field grabbing + displaying the results
       mu = as.numeric(input$mu)
       alpha = as.numeric(input$alphaOneSample)
       results = t.test(sample, mu=mu, conf.level=1-alpha)
       results
     }
+    # mostly same idea in here as one samp code, just doubled for two samp
     else if(input$hypothesis == "Two-Sample t-Test") {
       if(input$inputFiles == "CSV Upload (needs headers)" & is.null(input$twoSampleFile)){
         return("Please upload a CSV to continue!")
@@ -176,6 +200,7 @@ server = function(input, output) {
       results
     }
     else {
+      # prop test code - all just read ins
       n_success = as.numeric(input$numSuccesses)
       n_trial = as.numeric(input$numTrials)
       prop_hypo = as.numeric(input$propHypo)
@@ -184,15 +209,18 @@ server = function(input, output) {
     }
   })
   
-  # this needs to be updated to depend on user input for graphs
+  # graph result renderer
   output$plot = renderPlot({
+    # conditional on hypothesis again
     if(input$hypothesis == "One-Sample t-Test") {
+      # most of this code is repeated
       if(input$inputFiles == "CSV Upload (needs headers)" & is.null(input$singleSampleFile)){
         return("Please upload a CSV to continue!")
       } else if(input$inputFiles == "Manual Input") {
         sample = unlist(strsplit(input$singleSampleData, '\\s*,\\s*'))
         sample = as.numeric(sample)
       } else if(input$inputFiles == "Sample Data") {
+        # need to vectorize/unname/unlist otherwise the grapher complains
         sample = unlist(unname(as.vector(mtcars[input$singleSampleColumn])))
       } else {
         file = input$singleSampleFile
@@ -205,6 +233,7 @@ server = function(input, output) {
         boxplot(sample, main="Boxplot of Sample Data")
       }
     } else if(input$hypothesis == "Two-Sample t-Test") {
+      # largely same idea as one samp
       if(input$inputFiles == "CSV Upload (needs headers)" & is.null(input$twoSampleFile)){
         return("Please upload a CSV to continue!")
       } else if(input$inputFiles == "Manual Input") {
@@ -229,6 +258,7 @@ server = function(input, output) {
         boxplot(sample1, sample2, names=c("Sample 1", "Sample 2"), main="Boxplot of Two Samples")
       }
     } else {
+      # prop test - can't meaningfully be anything else besides a barplot tbh
       n_success = as.numeric(input$numSuccesses)
       n_trial = as.numeric(input$numTrials)
       n_failures = n_trial - n_success
