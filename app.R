@@ -40,7 +40,7 @@ ui = fluidPage(
         conditionalPanel(
           condition = "input.inputFiles == 'CSV Upload (needs headers)'",
           fileInput(
-            "singleSampleFile", "Upload File (csv)", accept=".csv", placeholder="Currently using sample..."
+            "singleSampleFile", "Upload File (csv)", accept=".csv"
           ),
           uiOutput("singlePlaceholder")
         ),
@@ -87,7 +87,7 @@ ui = fluidPage(
         conditionalPanel(
           condition = "input.inputFiles == 'CSV Upload (needs headers)'",
           fileInput(
-            "twoSampleFile", "Upload File (csv)", accept=".csv", placeholder="Currently using sample..."
+            "twoSampleFile", "Upload File (csv)", accept=".csv"
           ),
           uiOutput("multiPlaceholderOne"),
           uiOutput("multiPlaceholderTwo")
@@ -123,8 +123,16 @@ ui = fluidPage(
     ),
     # right side, hypo test + graph results
     mainPanel(
-      verbatimTextOutput("results"),
-      plotOutput("plot")
+      tabsetPanel(
+        tabPanel("Result", verbatimTextOutput("results"), plotOutput("plot")),
+        tabPanel("Help", h3("What is Hypothesis Testing?"), 
+                 p("Hypothesis testing is a method of making decisions or inferences about population parameters based on sample data"),
+                 p("In this app, you can perform the following tests:"),
+                 p("\t- One-Sample t-Test: Compare the mean of a sample to a known population mean."),
+                 p("\t- Two-Sample t-Test: Compare the means of two independent samples."),
+                 p("\t- Proportion Test: Test the proportion of successes against a hypothesized proportion."),
+                 p("Use the Results tab to see outputs such as p-values, test statistics, and visualizations."))
+      )
     )
   )
 )
